@@ -15,21 +15,28 @@ import cv2
 app = FastAPI()
 
 # Celery setup (connect to Redis)
-celery_app = Celery("tasks", broker="redis://localhost:6379/0", backend="redis://localhost:6379/1")
+celery_app = Celery(
+    "tasks", broker="redis://localhost:6379/0", backend="redis://localhost:6379/1"
+)
 
 # Load YOLOv8 pre-trained model (trained on COCO dataset)
-detection_model = YOLO("yolov8n.pt")  # 'yolov8n' is the smallest model, you can use 'yolov8s', 'yolov8m' for better accuracy
+detection_model = YOLO(
+    "yolov8n.pt"
+)  # 'yolov8n' is the smallest model, you can use 'yolov8s', 'yolov8m' for better accuracy
 
 # Load class names from the JSON file
 with open("labels.json", "r") as json_file:
     class_labels = json.load(json_file)
 
+
 class ImageRequest(BaseModel):
     file_url: str
+
 
 @app.get("/")
 def read_root():
     return {"message": "Hello, FastAPI!"}
+
 
 @app.post("/predict/file")
 async def predict_file(file: UploadFile):
@@ -49,6 +56,7 @@ async def predict_file(file: UploadFile):
 
     return {"prediction": output}
 
+
 @app.post("/predict")
 async def predict(request: ImageRequest):
 
@@ -62,21 +70,23 @@ async def predict(request: ImageRequest):
 
     return {"prediction": output}
 
+
 def read_image_from_url(image_url):
     response = requests.get(image_url)
     if response.status_code != 200:
         raise ValueError(f"Failed to fetch image: {response.status_code}")
-    
+
     image_array = np.asarray(bytearray(response.content), dtype=np.uint8)
     image = cv2.imdecode(image_array, cv2.IMREAD_COLOR)
-    
+
     if image is None:
         raise ValueError("Failed to decode image from URL")
-    
+
     return image
 
+
 @celery_app.task(name="tasks.process_image")
-def predict(image_id : int, image_url : str):
+def predict(image_id: int, image_url: str):
     print("image id : %d, image url: %s" % (image_id, image_url))
 
     raw_image = read_image_from_url(image_url)

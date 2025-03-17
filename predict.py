@@ -4,6 +4,7 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 
+
 def predict_fruit(images: List[np.ndarray], class_labels) -> List[str]:
 
     result = []
@@ -12,10 +13,14 @@ def predict_fruit(images: List[np.ndarray], class_labels) -> List[str]:
         print("wrong model type")
         return
 
-    processed_images = np.vstack([preprocess_image(image) for image in images])  # Stack into batch
+    processed_images = np.vstack(
+        [preprocess_image(image) for image in images]
+    )  # Stack into batch
     predictions = classification_model.predict(processed_images)  # Process in batch
 
-    results = [class_labels[np.argmax(pred)] for pred in predictions]  # Get top predictions
+    results = [
+        class_labels[np.argmax(pred)] for pred in predictions
+    ]  # Get top predictions
 
     return results
 
