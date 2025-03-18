@@ -5,10 +5,10 @@ from PIL import Image
 import numpy as np
 
 
-def predict_fruit(images: List[np.ndarray], class_labels) -> List[str]:
+def predict_fruit(
+    images: List[np.ndarray], class_labels, classification_model
+) -> List[str]:
 
-    result = []
-    classification_model = tf.keras.models.load_model("katty-3.keras")
     if not isinstance(classification_model, tf.keras.Model):
         print("wrong model type")
         return

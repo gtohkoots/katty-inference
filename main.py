@@ -11,8 +11,19 @@ import tensorflow as tf
 import requests
 import json
 import cv2
+import os
+
+from util import identify_color_format
 
 app = FastAPI()
+
+
+# Force TensorFlow to use a single thread
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TF warnings
+os.environ["TF_INTER_OP_PARALLELISM_THREADS"] = "1"
+os.environ["TF_INTRA_OP_PARALLELISM_THREADS"] = "1"
+
+classification_model = tf.keras.models.load_model("katty-3.keras")
 
 # Celery setup (connect to Redis)
 celery_app = Celery(
@@ -41,18 +52,15 @@ def read_root():
 @app.post("/predict/file")
 async def predict_file(file: UploadFile):
 
-    raw_image = Image.open(BytesIO(await file.read())).convert("RGB")
+    raw_image = Image.open(BytesIO(await file.read()))
     raw_image_np = np.array(raw_image)
+    raw_image_np = cv2.cvtColor(raw_image_np, cv2.COLOR_RGB2BGR)
 
     # pass to the detect service to extract fruits in the image
     fruit_images = detect_fruits(raw_image_np, detection_model)
 
-    print("Post Detection: %d" % (len(fruit_images)))
-
     # pass the images to predict service
-    output = predict_fruit(fruit_images, class_labels)
-
-    print("Post Prediction: ", output)
+    output = predict_fruit(fruit_images, class_labels, classification_model)
 
     return {"prediction": output}
 
@@ -62,11 +70,13 @@ async def predict(request: ImageRequest):
 
     raw_image = read_image_from_url(request.file_url)
 
+    # print("color format %s" % (identify_color_format(raw_image)))
+
     # pass to the detect service to extract fruits in the image
     fruit_images = detect_fruits(raw_image, detection_model)
 
     # pass the images to predict service
-    output = predict_fruit(fruit_images, class_labels)
+    output = predict_fruit(fruit_images, class_labels, classification_model)
 
     return {"prediction": output}
 
@@ -91,13 +101,15 @@ def predict(image_id: int, image_url: str):
 
     raw_image = read_image_from_url(image_url)
 
+    print("color format %s" % (identify_color_format(raw_image)))
+
     # pass to the detect service to extract fruits in the image
     fruit_images = detect_fruits(raw_image, detection_model)
 
     print("Post Detection: %d" % (len(fruit_images)))
 
     # pass the images to predict service
-    output = predict_fruit(fruit_images, class_labels)
+    output = predict_fruit(fruit_images, class_labels, classification_model)
 
     print("Post Prediction: ", output)
 
