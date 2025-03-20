@@ -5,7 +5,10 @@ tensorflow
 numpy
 pillow
 python-multipart
+python-dotenv
 matplotlib
 scikit-learn
 opencv-python
 celery
+google-cloud-aiplatform
+protobuf

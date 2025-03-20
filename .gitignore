@@ -20,6 +20,7 @@ content/
 
 # Ignore Keras models
 *.keras
+saved_model/
 
 # Ignore YOLO models
 *.pt

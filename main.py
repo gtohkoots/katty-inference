@@ -11,17 +11,10 @@ import tensorflow as tf
 import requests
 import json
 import cv2
-import os
 
 from util import identify_color_format
 
 app = FastAPI()
-
-
-# Force TensorFlow to use a single thread
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"  # Suppress TF warnings
-os.environ["TF_INTER_OP_PARALLELISM_THREADS"] = "1"
-os.environ["TF_INTRA_OP_PARALLELISM_THREADS"] = "1"
 
 classification_model = tf.keras.models.load_model("katty-3.keras")
 
@@ -59,6 +52,10 @@ async def predict_file(file: UploadFile):
     # pass to the detect service to extract fruits in the image
     fruit_images = detect_fruits(raw_image_np, detection_model)
 
+    if len(fruit_images) == 0:
+        print("no fruit detected from the image, exiting")
+        return {"prediction": "no fruit detected from the image, exiting"}
+
     # pass the images to predict service
     output = predict_fruit(fruit_images, class_labels, classification_model)
 
@@ -70,10 +67,14 @@ async def predict(request: ImageRequest):
 
     raw_image = read_image_from_url(request.file_url)
 
-    # print("color format %s" % (identify_color_format(raw_image)))
+    print("color format %s" % (identify_color_format(raw_image)))
 
     # pass to the detect service to extract fruits in the image
     fruit_images = detect_fruits(raw_image, detection_model)
+
+    if len(fruit_images) == 0:
+        print("no fruit detected from the image, exiting")
+        return {"prediction": "no fruit detected from the image, exiting"}
 
     # pass the images to predict service
     output = predict_fruit(fruit_images, class_labels, classification_model)
@@ -107,6 +108,10 @@ def predict(image_id: int, image_url: str):
     fruit_images = detect_fruits(raw_image, detection_model)
 
     print("Post Detection: %d" % (len(fruit_images)))
+
+    if len(fruit_images) == 0:
+        print("no fruit detected from the image, exiting")
+        return {"prediction": "no fruit detected from the image, exiting"}
 
     # pass the images to predict service
     output = predict_fruit(fruit_images, class_labels, classification_model)
